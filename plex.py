@@ -5,6 +5,11 @@ import sys
 import plexapi.myplex as myplex
 
 
+SERVER = "Some server"
+LIBSECTION = "Some section"
+SERIES = "Some series"
+
+
 starterdir = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
@@ -20,8 +25,8 @@ class PlexAccount:
 
 account = PlexAccount()
 instance = myplex.MyPlexAccount(account.user, account.password)
-server = instance.resource("Some server").connect()
-show = server.library.section("Serien").get("Some series")
+server = instance.resource(SERVER).connect()
+show = server.library.section(LIBSECTION).get(SERIES)
 outdir = os.path.join(starterdir, "out")
 if not os.path.exists(outdir):
     os.mkdir(outdir)
