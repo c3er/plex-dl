@@ -20,4 +20,10 @@ class PlexAccount:
 
 account = PlexAccount()
 instance = myplex.MyPlexAccount(account.user, account.password)
-print(instance.devices())
+server = instance.resource("Some server").connect()
+show = server.library.section("Serien").get("Some series")
+outdir = os.path.join(starterdir, "out")
+if not os.path.exists(outdir):
+    os.mkdir(outdir)
+episode = show.episodes()[0]
+episode.download(outdir, keep_original_name=True)
