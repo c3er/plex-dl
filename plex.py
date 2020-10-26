@@ -1,57 +1,93 @@
 import json
 import os
+import re
 import sys
 
 import plexapi.myplex as myplex
+import plexapi.video
 
+
+class Show:
+    def __init__(self, section, name):
+        self.section = section
+        self.name = name
+
+    @property
+    def filename(self):
+        return re.sub(r"[<>:\"/\\|\?\*]", "", self.name)
+
+
+STARTERDIR = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 SERVER = "Some server"
-LIBSECTION = "Some section"
-SHOW = "Some series"
+SHOWS = [
+    Show("Section 1", "Show 1"),
+    Show("Section 1", "Show 2"),
+    Show("Section 2", "Show 3"),
+]
 
 
-starterdir = os.path.dirname(os.path.realpath(sys.argv[0]))
-
-
-def log(*args, sep=" ", end="\n"):
+def log(*args, sep=" ", end="\n", file=sys.stdout):
     print(*args, sep=sep, end=end)
-    sys.stdout.flush()
+    file.flush()
+
+
+def error(msg):
+    log(msg, file=sys.stderr)
+    sys.exit(1)
 
 
 def extract_filename(episode):
     return episode.locations[0].split("/")[-1]
 
 
+def mkdir(path):
+    try:
+        os.mkdir(path)
+    except FileExistsError:
+        pass
+
+
 def main():
-    with open(os.path.join(starterdir, "secrets.json"), encoding="utf8") as f:
+    with open(os.path.join(STARTERDIR, "secrets.json"), encoding="utf8") as f:
         data = json.load(f)
     credentials = data["plexAccount"]
 
-    episodes = (myplex.MyPlexAccount(credentials["user"], credentials["password"])
+    connection = (myplex.MyPlexAccount(credentials["user"], credentials["password"])
         .resource(SERVER)
         .connect()
-        .library
-        .section(LIBSECTION)
-        .get(SHOW)
-        .episodes())
+        .library)
 
-    log(f'Downloading {len(episodes)} episodes of "{SHOW}"...')
-
-    outdir = os.path.join(starterdir, "out")
-    if not os.path.exists(outdir):
-        os.mkdir(outdir)
+    outpath = os.path.join(STARTERDIR, "out")
+    mkdir(outpath)
 
     try:
-        for episode in episodes:
-            filename = extract_filename(episode)
-            path = os.path.join(outdir, filename)
-            if os.path.exists(path):
-                log(f'"{filename}" exists already; skipping')
+        for show in SHOWS:
+            plexshow = (connection
+                .section(show.section)
+                .get(show.name))
+            if isinstance(plexshow, plexapi.video.Show):
+                episodes = plexshow.episodes()
+            elif isinstance(plexshow, plexapi.video.Movie):
+                episodes = [plexshow]
             else:
-                log(f'Download "{filename}"...', end="\t")
-                episode.download(outdir, keep_original_name=True)
-                log("Ready")
-        log("All episodes downloaded")
+                error(f"Not supported: {type(plexshow)}")
+
+            showpath = os.path.join(outpath, show.filename)
+            mkdir(showpath)
+
+            log(f'Downloading {len(episodes)} episodes of "{show.name}"...')
+
+            for episode in episodes:
+                filename = extract_filename(episode)
+                path = os.path.join(showpath, filename)
+                if os.path.exists(path):
+                    log(f'"{filename}" exists already; skipping')
+                else:
+                    log(f'Download "{filename}"...', end="\t")
+                    episode.download(showpath, keep_original_name=True)
+                    log("Ready")
+            log("All episodes downloaded")
     except KeyboardInterrupt:
         log("Interrupted")
         os.remove(path)
