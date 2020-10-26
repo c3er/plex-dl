@@ -41,16 +41,18 @@ def main():
     if not os.path.exists(outdir):
         os.mkdir(outdir)
 
-    for episode in episodes:
-        filename = extract_filename(episode)
-        if os.path.exists(os.path.join(outdir, filename)):
-            log(f'"{filename}" exists already; skipping')
-        else:
-            log(f'Download "{filename}"...', end="\t")
-            episode.download(outdir, keep_original_name=True)
-            log("Ready")
-
-    log("All episodes downloaded")
+    try:
+        for episode in episodes:
+            filename = extract_filename(episode)
+            if os.path.exists(os.path.join(outdir, filename)):
+                log(f'"{filename}" exists already; skipping')
+            else:
+                log(f'Download "{filename}"...', end="\t")
+                episode.download(outdir, keep_original_name=True)
+                log("Ready")
+        log("All episodes downloaded")
+    except KeyboardInterrupt:
+        log("Interrupted")
 
 
 if __name__ == "__main__":
