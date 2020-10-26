@@ -22,31 +22,36 @@ def extract_filename(episode):
     return episode.locations[0].split("/")[-1]
 
 
-with open(os.path.join(starterdir, "secrets.json"), encoding="utf8") as f:
-    data = json.load(f)
-credentials = data["plexAccount"]
+def main():
+    with open(os.path.join(starterdir, "secrets.json"), encoding="utf8") as f:
+        data = json.load(f)
+    credentials = data["plexAccount"]
 
-episodes = (myplex.MyPlexAccount(credentials["user"], credentials["password"])
-    .resource(SERVER)
-    .connect()
-    .library
-    .section(LIBSECTION)
-    .get(SHOW)
-    .episodes())
+    episodes = (myplex.MyPlexAccount(credentials["user"], credentials["password"])
+        .resource(SERVER)
+        .connect()
+        .library
+        .section(LIBSECTION)
+        .get(SHOW)
+        .episodes())
 
-log(f'Downloading {len(episodes)} episodes of "{SHOW}"...')
+    log(f'Downloading {len(episodes)} episodes of "{SHOW}"...')
 
-outdir = os.path.join(starterdir, "out")
-if not os.path.exists(outdir):
-    os.mkdir(outdir)
+    outdir = os.path.join(starterdir, "out")
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
 
-for episode in episodes:
-    filename = extract_filename(episode)
-    if os.path.exists(os.path.join(outdir, filename)):
-        log(f'"{filename}" exists already; skipping')
-    else:
-        log(f'Download "{filename}"...', end="\t")
-        episode.download(outdir, keep_original_name=True)
-        log("Ready")
+    for episode in episodes:
+        filename = extract_filename(episode)
+        if os.path.exists(os.path.join(outdir, filename)):
+            log(f'"{filename}" exists already; skipping')
+        else:
+            log(f'Download "{filename}"...', end="\t")
+            episode.download(outdir, keep_original_name=True)
+            log("Ready")
 
-log("All episodes downloaded")
+    log("All episodes downloaded")
+
+
+if __name__ == "__main__":
+    main()
