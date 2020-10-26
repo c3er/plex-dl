@@ -44,7 +44,8 @@ def main():
     try:
         for episode in episodes:
             filename = extract_filename(episode)
-            if os.path.exists(os.path.join(outdir, filename)):
+            path = os.path.join(outdir, filename)
+            if os.path.exists(path):
                 log(f'"{filename}" exists already; skipping')
             else:
                 log(f'Download "{filename}"...', end="\t")
@@ -53,6 +54,7 @@ def main():
         log("All episodes downloaded")
     except KeyboardInterrupt:
         log("Interrupted")
+        os.remove(path)
 
 
 if __name__ == "__main__":
