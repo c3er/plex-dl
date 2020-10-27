@@ -28,8 +28,7 @@ SHOWS = [
 
 
 def log(*args, sep=" ", end="\n", file=sys.stdout):
-    print(*args, sep=sep, end=end)
-    file.flush()
+    print(*args, sep=sep, end=end, file=file, flush=True)
 
 
 def error(msg):
