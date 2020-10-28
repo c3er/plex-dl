@@ -47,6 +47,21 @@ def mkdir(path):
         pass
 
 
+def download(movie, outpath):
+    try:
+        filename = extract_filename(movie)
+        path = os.path.join(outpath, filename)
+        if os.path.exists(path):
+            log(f'"{filename}" exists already; skipping')
+        else:
+            log(f'Download "{filename}"...', end="\t")
+            movie.download(outpath, keep_original_name=True)
+            log("Ready")
+    except KeyboardInterrupt:
+        os.remove(path)
+        raise
+
+
 def main():
     with open(os.path.join(STARTERDIR, "secrets.json"), encoding="utf8") as f:
         data = json.load(f)
@@ -65,31 +80,23 @@ def main():
             plexshow = (connection
                 .section(show.section)
                 .get(show.name))
+
             if isinstance(plexshow, plexapi.video.Show):
                 episodes = plexshow.episodes()
+                log(f'Downloading {len(episodes)} episodes of "{show.name}"...')
+
+                showpath = os.path.join(outpath, show.filename)
+                mkdir(showpath)
+
+                for episode in episodes:
+                    download(episode, showpath)
+                log("All episodes downloaded")
             elif isinstance(plexshow, plexapi.video.Movie):
-                episodes = [plexshow]
+                download(plexshow, outpath)
             else:
                 error(f"Not supported: {type(plexshow)}")
-
-            showpath = os.path.join(outpath, show.filename)
-            mkdir(showpath)
-
-            log(f'Downloading {len(episodes)} episodes of "{show.name}"...')
-
-            for episode in episodes:
-                filename = extract_filename(episode)
-                path = os.path.join(showpath, filename)
-                if os.path.exists(path):
-                    log(f'"{filename}" exists already; skipping')
-                else:
-                    log(f'Download "{filename}"...', end="\t")
-                    episode.download(showpath, keep_original_name=True)
-                    log("Ready")
-            log("All episodes downloaded")
     except KeyboardInterrupt:
         log("Interrupted")
-        os.remove(path)
 
 
 if __name__ == "__main__":
