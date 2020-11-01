@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import re
@@ -27,6 +28,15 @@ SHOWS = [
 ]
 
 
+class Duration:
+    def __init__(self, timedelta):
+        self.hours, seconds = divmod(int(timedelta.total_seconds() + 0.5), 3600)
+        self.minutes, self.seconds = divmod(seconds, 60)
+
+    def __str__(self):
+        return f"{self.hours:02}h{self.minutes:02}m{self.seconds:02}s"
+
+
 def log(*args, sep=" ", end="\n", file=sys.stdout):
     print(*args, sep=sep, end=end, file=file, flush=True)
 
@@ -47,6 +57,10 @@ def mkdir(path):
         pass
 
 
+def timestr(time):
+    return f"{time.year}.{time.month:02}.{time.day:02} {time.hour:02}:{time.minute:02}:{time.second:02}"
+
+
 def download(movie, outpath):
     try:
         filename = extract_filename(movie)
@@ -54,9 +68,14 @@ def download(movie, outpath):
         if os.path.exists(path):
             log(f'"{filename}" exists already; skipping')
         else:
-            log(f'Download "{filename}"...', end="\t")
+            now = datetime.datetime.now
+
+            starttime = now()
+            log(timestr(starttime), filename, sep="\t", end="\t")
             movie.download(outpath, keep_original_name=True)
-            log("Ready")
+
+            finished_time = now()
+            log(timestr(finished_time), Duration(finished_time - starttime), sep="\t")
     except KeyboardInterrupt:
         os.remove(path)
         raise
