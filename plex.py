@@ -9,9 +9,11 @@ import plexapi.video
 
 
 class Show:
-    def __init__(self, section, name):
+    def __init__(self, section, name, skip=0, ignore=0):
         self.section = section
         self.name = name
+        self.skip = skip
+        self.ignore = ignore
 
     @property
     def filename(self):
@@ -101,7 +103,10 @@ def main():
                 .get(show.name))
 
             if isinstance(plexshow, plexapi.video.Show):
-                episodes = plexshow.episodes()
+                episodes = plexshow.episodes()[show.skip:]
+                ignore = show.ignore
+                if ignore > 0:
+                    episodes = episodes[:-ignore]
                 log(f'Downloading {len(episodes)} episodes of "{show.name}"...')
 
                 showpath = os.path.join(outpath, show.filename)
